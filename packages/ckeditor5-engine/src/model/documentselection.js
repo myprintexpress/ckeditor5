@@ -604,8 +604,8 @@ class LiveSelection extends Selection {
 
 		// Contains data required to fix ranges which have been moved to the graveyard.
 		// @private
-		// @member {Array} module:engine/model/liveselection~LiveSelection#_fixGraveyardRangesData
-		this._fixGraveyardRangesData = [];
+		// @member {} module:engine/model/liveselection~LiveSelection#_fixGraveyardRangePosition
+		this._fixGraveyardRangePosition = null;
 
 		// Flag that informs whether the selection ranges have changed. It is changed on true when `LiveRange#change:range` event is fired.
 		// @private
@@ -628,11 +628,11 @@ class LiveSelection extends Selection {
 				return;
 			}
 
-			while ( this._fixGraveyardRangesData.length ) {
-				const { liveRange, sourcePosition } = this._fixGraveyardRangesData.shift();
-
-				this._fixGraveyardSelection( liveRange, sourcePosition );
+			if ( this._ranges.length == 0 && this._fixGraveyardRangePosition ) {
+				this._fixGraveyardSelection( this._fixGraveyardRangePosition );
 			}
+
+			this._fixGraveyardRangePosition = null;
 
 			if ( this._hasChangedRange ) {
 				this._hasChangedRange = false;
@@ -832,10 +832,12 @@ class LiveSelection extends Selection {
 
 			// If `LiveRange` is in whole moved to the graveyard, save necessary data. It will be fixed on `Model#applyOperation` event.
 			if ( liveRange.root == this._document.graveyard ) {
-				this._fixGraveyardRangesData.push( {
-					liveRange,
-					sourcePosition: data.deletionPosition
-				} );
+				this._fixGraveyardRangePosition = data.deletionPosition;
+
+				// Remove the old selection range from the selection.
+				const index = this._ranges.indexOf( liveRange );
+				this._ranges.splice( index, 1 );
+				liveRange.detach();
 			}
 		} );
 
@@ -849,7 +851,9 @@ class LiveSelection extends Selection {
 		for ( const marker of this._model.markers ) {
 			const markerRange = marker.getRange();
 
-			for ( const selectionRange of this.getRanges() ) {
+			const ranges = this._ranges.length ? this._ranges : [ this._document._getDefaultRange() ];
+
+			for ( const selectionRange of ranges ) {
 				if ( markerRange.containsRange( selectionRange, !selectionRange.isCollapsed ) ) {
 					markers.push( marker );
 				}
@@ -1120,31 +1124,17 @@ class LiveSelection extends Selection {
 	// Fixes a selection range after it ends up in graveyard root.
 	//
 	// @private
-	// @param {module:engine/model/liverange~LiveRange} liveRange The range from selection, that ended up in the graveyard root.
 	// @param {module:engine/model/position~Position} removedRangeStart Start position of a range which was removed.
-	_fixGraveyardSelection( liveRange, removedRangeStart ) {
-		// The start of the removed range is the closest position to the `liveRange` - the original selection range.
-		// This is a good candidate for a fixed selection range.
-		const positionCandidate = removedRangeStart.clone();
-
+	_fixGraveyardSelection( removedRangeStart ) {
 		// Find a range that is a correct selection range and is closest to the start of removed range.
-		const selectionRange = this._model.schema.getNearestSelectionRange( positionCandidate );
-
-		// Remove the old selection range before preparing and adding new selection range. This order is important,
-		// because new range, in some cases, may intersect with old range (it depends on `getNearestSelectionRange()` result).
-		const index = this._ranges.indexOf( liveRange );
-		this._ranges.splice( index, 1 );
-		liveRange.detach();
+		const selectionRange = this._model.schema.getNearestSelectionRange( removedRangeStart );
 
 		// If nearest valid selection range has been found - add it in the place of old range.
 		// If range is equal to any other selection ranges then it is probably due to contents
 		// of a multi-range selection being removed. See ckeditor/ckeditor5#6501.
-		if ( selectionRange && !isRangeCollidingWithSelection( selectionRange, this ) ) {
+		if ( selectionRange ) {
 			// Check the range, convert it to live range, bind events, etc.
-			const newRange = this._prepareRange( selectionRange );
-
-			// Add new range in the place of old range.
-			this._ranges.splice( index, 0, newRange );
+			this._pushRange( selectionRange );
 		}
 		// If nearest valid selection range cannot be found or is intersecting with other selection ranges removing the old range is fine.
 	}
