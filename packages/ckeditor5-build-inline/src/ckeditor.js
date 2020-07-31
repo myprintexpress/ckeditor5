@@ -30,6 +30,22 @@ import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
 
+import Underline from '@ckeditor/ckeditor5-basic-styles/src/underline';
+import Strikethrough from '@ckeditor/ckeditor5-basic-styles/src/strikethrough';
+import Subscript from '@ckeditor/ckeditor5-basic-styles/src/subscript';
+import Superscript from '@ckeditor/ckeditor5-basic-styles/src/superscript';
+import TodoList from '@ckeditor/ckeditor5-list/src/todolist';
+import IndentBlock from '@ckeditor/ckeditor5-indent/src/indentblock';
+
+import Autosave from '@ckeditor/ckeditor5-autosave/src/autosave';
+import Alignment from '@ckeditor/ckeditor5-alignment/src/alignment';
+import Highlight from '@ckeditor/ckeditor5-highlight/src/highlight';
+import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline';
+import Font from '@ckeditor/ckeditor5-font/src/font';
+import WordCount from '@ckeditor/ckeditor5-word-count/src/wordcount';
+
+import SimpleUpload from 'ckeditor5-simple-upload/src/simpleupload';
+
 export default class InlineEditor extends InlineEditorBase {}
 
 // Plugins to include in the build.
@@ -56,38 +72,37 @@ InlineEditor.builtinPlugins = [
 	PasteFromOffice,
 	Table,
 	TableToolbar,
-	TextTransformation
+	TextTransformation,
+	Underline,
+	Strikethrough,
+	Subscript,
+	Superscript,
+	TodoList,
+	IndentBlock,
+	Autosave,
+	Alignment,
+	Highlight,
+	HorizontalLine,
+	Font,
+	WordCount,
+	SimpleUpload
 ];
 
 // Editor configuration.
 InlineEditor.defaultConfig = {
 	toolbar: {
-		items: [
-			'heading',
-			'|',
-			'bold',
-			'italic',
-			'link',
-			'bulletedList',
-			'numberedList',
-			'|',
-			'indent',
-			'outdent',
-			'|',
-			'imageUpload',
-			'blockQuote',
-			'insertTable',
-			'mediaEmbed',
-			'undo',
-			'redo'
-		]
+		items: []
 	},
 	image: {
 		toolbar: [
+			'imageStyle:alignLeft',
 			'imageStyle:full',
-			'imageStyle:side',
-			'|',
-			'imageTextAlternative'
+			'imageStyle:alignRight'
+		],
+		styles: [
+			'full',
+			'alignLeft',
+			'alignRight'
 		]
 	},
 	table: {
